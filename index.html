@@ -57,6 +57,7 @@
             <p id="result-summary" class="hint">献立を読み込むと結果が表示されます。</p>
           </div>
           <div class="result-actions">
+            <button id="serving-image-button" class="secondary" type="button" disabled>盛り付け表を画像表示</button>
             <button id="serving-button" class="secondary" type="button" disabled>盛り付け表をCSV保存</button>
             <button id="download-button" class="secondary" type="button" disabled>結果をCSV保存</button>
           </div>
@@ -67,6 +68,11 @@
             <thead id="result-head"></thead>
             <tbody id="result-body"></tbody>
           </table>
+        </div>
+        <div id="serving-preview" class="serving-preview" hidden>
+          <h3>盛り付け表</h3>
+          <img id="serving-image" alt="アレルギーの可能性を示す印が付いた盛り付け表">
+          <button id="download-image-button" class="secondary" type="button">盛り付け表をPNG保存</button>
         </div>
         <p class="disclaimer">この結果は原材料欄の文字列による確認補助です。最終的な喫食可否は、学校・栄養教諭・医療機関の指示と、メーカー等の正式な表示を必ず確認してください。</p>
       </section>

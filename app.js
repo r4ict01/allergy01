@@ -85,6 +85,7 @@ function displayResults() {
     $("result-summary").textContent = "献立を読み込むと結果が表示されます。";
     $("download-button").disabled = true;
     $("serving-button").disabled = true;
+    $("serving-image-button").disabled = true;
     return;
   }
   head.innerHTML = `<tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}<th>判定</th></tr>`;
@@ -98,6 +99,7 @@ function displayResults() {
   $("result-summary").textContent = `${rows.length}件中 ${matches}件で、選択したアレルゲンの可能性が見つかりました。`;
   $("download-button").disabled = false;
   $("serving-button").disabled = false;
+  $("serving-image-button").disabled = false;
   hasChecked = true;
 }
 
@@ -122,6 +124,8 @@ function loadText(text, label = "") {
   $("result-body").innerHTML = "";
   $("download-button").disabled = true;
   $("serving-button").disabled = true;
+  $("serving-image-button").disabled = true;
+  $("serving-preview").hidden = true;
 }
 
 function downloadResults() {
@@ -137,6 +141,74 @@ function downloadServingTable() {
   const output = [headers.concat("盛り付け")];
   rows.forEach((row) => output.push(row.concat(matchingAllergens(row).length ? "✕" : "")));
   downloadCsv(output, "盛り付け表.csv");
+}
+
+function createServingImage() {
+  const scale = 2;
+  const rowHeight = 42;
+  const padding = 24;
+  const columnWidths = headers.map((header, index) => Math.max(120, Math.min(280,
+    Math.max(String(header).length, ...rows.map((row) => String(row[index] || "").length)) * 16 + 28)));
+  const width = columnWidths.reduce((total, value) => total + value, 0) + 100 + padding * 2;
+  const height = (rows.length + 1) * rowHeight + padding * 2 + 42;
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const context = canvas.getContext("2d");
+  context.scale(scale, scale);
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+  context.font = 'bold 18px "Noto Sans JP", "Yu Gothic", sans-serif';
+  context.fillStyle = "#20302c";
+  context.fillText("盛り付け表", padding, padding + 18);
+  const tableTop = padding + 36;
+  let x = padding;
+  context.font = 'bold 14px "Noto Sans JP", "Yu Gothic", sans-serif';
+  headers.concat("盛り付け").forEach((header, index) => {
+    const cellWidth = index < columnWidths.length ? columnWidths[index] : 100;
+    context.fillStyle = "#eaf4ef";
+    context.fillRect(x, tableTop, cellWidth, rowHeight);
+    context.strokeStyle = "#c9dcd4";
+    context.strokeRect(x, tableTop, cellWidth, rowHeight);
+    context.fillStyle = "#20302c";
+    context.fillText(String(header), x + 10, tableTop + 26);
+    x += cellWidth;
+  });
+  rows.forEach((row, rowIndex) => {
+    x = padding;
+    const y = tableTop + (rowIndex + 1) * rowHeight;
+    const allergens = matchingAllergens(row);
+    row.forEach((cell, index) => {
+      context.fillStyle = "#ffffff";
+      context.strokeStyle = "#dce6e2";
+      context.fillRect(x, y, columnWidths[index], rowHeight);
+      context.strokeRect(x, y, columnWidths[index], rowHeight);
+      context.fillStyle = "#20302c";
+      context.font = '14px "Noto Sans JP", "Yu Gothic", sans-serif';
+      context.fillText(String(cell || "").slice(0, 24), x + 10, y + 26);
+      x += columnWidths[index];
+    });
+    context.fillStyle = "#ffffff";
+    context.strokeStyle = "#dce6e2";
+    context.fillRect(x, y, 100, rowHeight);
+    context.strokeRect(x, y, 100, rowHeight);
+    if (allergens.length) {
+      context.fillStyle = "#aa3d3d";
+      context.font = 'bold 25px sans-serif';
+      context.fillText("✕", x + 36, y + 29);
+    }
+  });
+  $("serving-image").src = canvas.toDataURL("image/png");
+  $("serving-preview").hidden = false;
+}
+
+function downloadServingImage() {
+  const image = $("serving-image");
+  if (!image.src) return;
+  const link = document.createElement("a");
+  link.href = image.src;
+  link.download = "盛り付け表.png";
+  link.click();
 }
 
 function downloadCsv(output, filename) {
@@ -206,6 +278,8 @@ $("load-button").addEventListener("click", () => loadText($("data-input").value)
 $("sample-button").addEventListener("click", () => { $("data-input").value = SAMPLE; loadText(SAMPLE, "サンプル"); });
 $("check-button").addEventListener("click", displayResults);
 $("serving-button").addEventListener("click", downloadServingTable);
+$("serving-image-button").addEventListener("click", createServingImage);
+$("download-image-button").addEventListener("click", downloadServingImage);
 $("select-all").addEventListener("click", () => document.querySelectorAll("#allergen-list input").forEach((input) => { input.checked = true; }));
 $("clear-all").addEventListener("click", () => document.querySelectorAll("#allergen-list input").forEach((input) => { input.checked = false; }));
 $("allergen-list").addEventListener("change", () => { if (hasChecked) displayResults(); });
