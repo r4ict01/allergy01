@@ -208,26 +208,22 @@ function createServingImage() {
 }
 
 function createPdfServingImage() {
-  const gap = 20;
-  const width = Math.max(...pdfPageImages.map(({ canvas }) => canvas.width));
-  const height = pdfPageImages.reduce((total, { canvas }) => total + canvas.height, 0) + gap * (pdfPageImages.length - 1);
+  const [{ canvas: pageCanvas, lines }] = pdfPageImages;
+  const width = pageCanvas.width;
+  const height = pageCanvas.height;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext("2d");
   context.fillStyle = "#dfe8e4";
   context.fillRect(0, 0, width, height);
-  let offsetY = 0;
-  pdfPageImages.forEach(({ canvas: pageCanvas, lines }) => {
-    context.drawImage(pageCanvas, 0, offsetY);
-    lines.forEach((line) => {
-      if (!matchingAllergens(line.text.split("\t")).length) return;
-      const rightEdge = Math.max(...line.items.map((item) => item.x + item.width));
-      context.fillStyle = "#aa3d3d";
-      context.font = 'bold 30px sans-serif';
-      context.fillText("✕", Math.min(rightEdge + 12, pageCanvas.width - 38), offsetY + line.canvasY + 10);
-    });
-    offsetY += pageCanvas.height + gap;
+  context.drawImage(pageCanvas, 0, 0);
+  lines.forEach((line) => {
+    if (!matchingAllergens(line.text.split("\t")).length) return;
+    const rightEdge = Math.max(...line.items.map((item) => item.x + item.width));
+    context.fillStyle = "#aa3d3d";
+    context.font = 'bold 30px sans-serif';
+    context.fillText("✕", Math.min(rightEdge + 12, pageCanvas.width - 38), line.canvasY + 10);
   });
   $("serving-image").src = canvas.toDataURL("image/png");
   $("serving-preview").hidden = false;
