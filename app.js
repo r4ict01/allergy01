@@ -84,6 +84,7 @@ function displayResults() {
   if (!rows.length) {
     $("result-summary").textContent = "献立を読み込むと結果が表示されます。";
     $("download-button").disabled = true;
+    $("serving-button").disabled = true;
     return;
   }
   head.innerHTML = `<tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}<th>判定</th></tr>`;
@@ -96,6 +97,7 @@ function displayResults() {
   });
   $("result-summary").textContent = `${rows.length}件中 ${matches}件で、選択したアレルゲンの可能性が見つかりました。`;
   $("download-button").disabled = false;
+  $("serving-button").disabled = false;
   hasChecked = true;
 }
 
@@ -119,15 +121,29 @@ function loadText(text, label = "") {
   $("result-head").innerHTML = "";
   $("result-body").innerHTML = "";
   $("download-button").disabled = true;
+  $("serving-button").disabled = true;
 }
 
 function downloadResults() {
   const output = [headers.concat("判定")];
-  rows.forEach((row) => output.push(row.concat(matchingAllergens(row).length ? `可能性あり（${matchingAllergens(row).join("・")}）` : "該当なし")));
+  rows.forEach((row) => {
+    const allergens = matchingAllergens(row);
+    output.push(row.concat(allergens.length ? `可能性あり（${allergens.join("・")}）` : "該当なし"));
+  });
+  downloadCsv(output, "給食アレルギーチェック結果.csv");
+}
+
+function downloadServingTable() {
+  const output = [headers.concat("盛り付け")];
+  rows.forEach((row) => output.push(row.concat(matchingAllergens(row).length ? "✕" : "")));
+  downloadCsv(output, "盛り付け表.csv");
+}
+
+function downloadCsv(output, filename) {
   const csv = output.map((line) => line.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\r\n");
   const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
   const link = document.createElement("a");
-  link.href = url; link.download = "給食アレルギーチェック結果.csv"; link.click();
+  link.href = url; link.download = filename; link.click();
   URL.revokeObjectURL(url);
 }
 
@@ -189,6 +205,7 @@ $("file-input").addEventListener("change", async (event) => {
 $("load-button").addEventListener("click", () => loadText($("data-input").value));
 $("sample-button").addEventListener("click", () => { $("data-input").value = SAMPLE; loadText(SAMPLE, "サンプル"); });
 $("check-button").addEventListener("click", displayResults);
+$("serving-button").addEventListener("click", downloadServingTable);
 $("select-all").addEventListener("click", () => document.querySelectorAll("#allergen-list input").forEach((input) => { input.checked = true; }));
 $("clear-all").addEventListener("click", () => document.querySelectorAll("#allergen-list input").forEach((input) => { input.checked = false; }));
 $("allergen-list").addEventListener("change", () => { if (hasChecked) displayResults(); });
