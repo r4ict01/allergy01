@@ -35,6 +35,7 @@ const SAMPLE = `日付,献立名,原材料
 let rows = [];
 let headers = [];
 let hasChecked = false;
+let pdfPageImages = [];
 
 const $ = (id) => document.getElementById(id);
 const normalize = (value) => value.normalize("NFKC").toLowerCase();
@@ -144,6 +145,10 @@ function downloadServingTable() {
 }
 
 function createServingImage() {
+  if (pdfPageImages.length) {
+    createPdfServingImage();
+    return;
+  }
   const scale = 2;
   const rowHeight = 42;
   const padding = 24;
@@ -202,6 +207,32 @@ function createServingImage() {
   $("serving-preview").hidden = false;
 }
 
+function createPdfServingImage() {
+  const gap = 20;
+  const width = Math.max(...pdfPageImages.map(({ canvas }) => canvas.width));
+  const height = pdfPageImages.reduce((total, { canvas }) => total + canvas.height, 0) + gap * (pdfPageImages.length - 1);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  context.fillStyle = "#dfe8e4";
+  context.fillRect(0, 0, width, height);
+  let offsetY = 0;
+  pdfPageImages.forEach(({ canvas: pageCanvas, lines }) => {
+    context.drawImage(pageCanvas, 0, offsetY);
+    lines.forEach((line) => {
+      if (!matchingAllergens(line.text.split("\t")).length) return;
+      const rightEdge = Math.max(...line.items.map((item) => item.x + item.width));
+      context.fillStyle = "#aa3d3d";
+      context.font = 'bold 30px sans-serif';
+      context.fillText("✕", Math.min(rightEdge + 12, pageCanvas.width - 38), offsetY + line.canvasY + 10);
+    });
+    offsetY += pageCanvas.height + gap;
+  });
+  $("serving-image").src = canvas.toDataURL("image/png");
+  $("serving-preview").hidden = false;
+}
+
 function downloadServingImage() {
   const image = $("serving-image");
   if (!image.src) return;
@@ -229,18 +260,24 @@ async function readFile(file) {
 async function extractPdfText(file) {
   if (!window.pdfjsLib) throw new Error("PDF読み込みライブラリを利用できません。");
   pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-  const document = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const pdfDocument = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
   const lines = [];
-  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
-    const page = await document.getPage(pageNumber);
-    const content = await page.getTextContent();
+  pdfPageImages = [];
+  for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
+    const page = await pdfDocument.getPage(pageNumber);
+    const viewport = page.getViewport({ scale: 1.5 });
+    const pageCanvas = document.createElement("canvas");
+    pageCanvas.width = viewport.width;
+    pageCanvas.height = viewport.height;
+    await page.render({ canvasContext: pageCanvas.getContext("2d"), viewport }).promise;
     const pageLines = [];
+    const content = await page.getTextContent();
     content.items.filter((item) => item.str && item.transform).forEach((item) => {
-      const x = item.transform[4];
-      const y = item.transform[5];
+      const x = item.transform[4] * 1.5;
+      const y = item.transform[5] * 1.5;
       let line = pageLines.find((candidate) => Math.abs(candidate.y - y) < 3);
       if (!line) { line = { y, items: [] }; pageLines.push(line); }
-      line.items.push({ x, width: item.width || 0, text: item.str });
+      line.items.push({ x, width: (item.width || 0) * 1.5, text: item.str });
     });
     pageLines.sort((a, b) => b.y - a.y).forEach((line) => {
       line.items.sort((a, b) => a.x - b.x);
@@ -253,8 +290,13 @@ async function extractPdfText(file) {
         else cells.push(item.text.trim());
         previousEnd = item.x + item.width;
       });
-      if (cells.some((cell) => cell)) lines.push(cells.join("\t"));
+      if (cells.some((cell) => cell)) {
+        lines.push(cells.join("\t"));
+        line.text = cells.join("\t");
+        line.canvasY = viewport.height - line.y;
+      }
     });
+    pdfPageImages.push({ canvas: pageCanvas, lines: pageLines.filter((line) => line.text) });
   }
   if (!lines.length) throw new Error("PDFから文字を抽出できませんでした。画像PDFには対応していないため、文字情報を含むPDFを選択してください。");
   return lines.join("\n");
@@ -264,9 +306,9 @@ $("file-input").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
   try {
-    const text = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
-      ? await extractPdfText(file)
-      : await readFile(file);
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) pdfPageImages = [];
+    const text = isPdf ? await extractPdfText(file) : await readFile(file);
     loadText(text, file.name);
   } catch (error) {
     $("message").textContent = error.message || "ファイルを読み込めませんでした。";
