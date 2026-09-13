@@ -91,7 +91,13 @@ function displayResults() {
   }
   head.innerHTML = `<tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}<th>判定</th></tr>`;
   let matches = 0;
+  let currentDate = null;
   rows.forEach((row) => {
+    const date = formatDate(row[0] || "");
+    if (date !== currentDate) {
+      currentDate = date;
+      body.insertAdjacentHTML("beforeend", `<tr class="date-group"><th colspan="${headers.length + 1}">${escapeHtml(date || "日付未記載")}</th></tr>`);
+    }
     const allergens = matchingAllergens(row);
     if (allergens.length) matches += 1;
     const cells = headers.map((_, i) => `<td>${escapeHtml(row[i] || "")}</td>`).join("");
@@ -102,6 +108,15 @@ function displayResults() {
   $("serving-button").disabled = false;
   $("serving-image-button").disabled = false;
   hasChecked = true;
+}
+
+function formatDate(value) {
+  const match = String(value).match(/(\d{4})\s*[年\/.-]\s*(\d{1,2})\s*[月\/.-]\s*(\d{1,2})\s*日?/);
+  if (!match) return String(value).trim();
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (Number.isNaN(date.getTime())) return String(value).trim();
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+  return `${match[1]}年${Number(match[2])}月${Number(match[3])}日（${weekdays[date.getDay()]}）`;
 }
 
 function escapeHtml(value) {
