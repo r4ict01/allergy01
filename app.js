@@ -89,7 +89,7 @@ function displayResults() {
     $("serving-image-button").disabled = true;
     return;
   }
-  const dateIndex = headers.findIndex((header) => /日付|日にち|日|date/i.test(header));
+  const dateIndex = findDateColumn();
   const menuIndex = headers.findIndex((header) => /献立名|メニュー|料理名|献立|料理|menu/i.test(header));
   const displayDateIndex = dateIndex >= 0 ? dateIndex : 0;
   const displayMenuIndex = menuIndex >= 0 && menuIndex !== displayDateIndex ? menuIndex : (headers.length > 1 ? 1 : 0);
@@ -114,6 +114,25 @@ function displayResults() {
   $("serving-button").disabled = false;
   $("serving-image-button").disabled = false;
   hasChecked = true;
+}
+
+function isDateValue(value) {
+  return /^\s*(?:\d{4}\s*[年\/.-]\s*\d{1,2}\s*[月\/.-]\s*\d{1,2}\s*日?|\d{1,2}\s*[月\/.-]\s*\d{1,2}\s*日?)(?:\s*[（(][月火水木金土日][）)])?\s*$/.test(String(value));
+}
+
+function findDateColumn() {
+  const headerIndex = headers.findIndex((header) => /日付|日にち|date/i.test(header));
+  if (headerIndex >= 0) return headerIndex;
+  let bestIndex = -1;
+  let bestScore = 0;
+  headers.forEach((_, index) => {
+    const score = rows.reduce((total, row) => total + (isDateValue(row[index]) ? 1 : 0), 0);
+    if (score > bestScore) {
+      bestScore = score;
+      bestIndex = index;
+    }
+  });
+  return bestIndex >= 0 ? bestIndex : 0;
 }
 
 function formatDate(value) {
