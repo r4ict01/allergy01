@@ -93,21 +93,24 @@ function displayResults() {
   const menuIndex = headers.findIndex((header) => /献立名|メニュー|料理名|献立|料理|menu/i.test(header));
   const displayDateIndex = dateIndex >= 0 ? dateIndex : 0;
   const displayMenuIndex = menuIndex >= 0 && menuIndex !== displayDateIndex ? menuIndex : (headers.length > 1 ? 1 : 0);
-  head.innerHTML = "<tr><th>日にち</th><th>メニュー</th><th>判定</th></tr>";
+  head.innerHTML = "<tr><th>日にち</th><th>料理</th></tr>";
   let matches = 0;
   let currentDate = null;
   rows.forEach((row) => {
+    const allergens = matchingAllergens(row);
+    if (!allergens.length) return;
+    matches += 1;
     const date = formatDate(row[displayDateIndex] || "");
     if (date !== currentDate) {
       currentDate = date;
-      body.insertAdjacentHTML("beforeend", `<tr class="date-group"><th colspan="3">${escapeHtml(date || "日付未記載")}</th></tr>`);
+      body.insertAdjacentHTML("beforeend", `<tr class="date-group"><th colspan="2">${escapeHtml(date || "日付未記載")}</th></tr>`);
     }
-    const allergens = matchingAllergens(row);
-    if (allergens.length) matches += 1;
-    const cells = `<td>${escapeHtml(formatDate(row[displayDateIndex] || ""))}</td><td>${escapeHtml(row[displayMenuIndex] || "")}</td>`;
-    body.insertAdjacentHTML("beforeend", `<tr>${cells}<td class="${allergens.length ? "match" : "safe"}">${allergens.length ? `可能性あり（${allergens.join("・")}）` : "該当なし"}</td></tr>`);
+    const cells = `<td>${escapeHtml(date)}</td><td>${escapeHtml(row[displayMenuIndex] || "")}</td>`;
+    body.insertAdjacentHTML("beforeend", `<tr>${cells}</tr>`);
   });
-  $("result-summary").textContent = `${rows.length}件中 ${matches}件で、選択したアレルゲンの可能性が見つかりました。`;
+  $("result-summary").textContent = matches
+    ? `${rows.length}件中 ${matches}件の料理にアレルギーの可能性があります。`
+    : "アレルギーの可能性がある料理はありません。";
   $("download-button").disabled = false;
   $("serving-button").disabled = false;
   $("serving-image-button").disabled = false;
