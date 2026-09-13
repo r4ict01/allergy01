@@ -131,10 +131,53 @@ async function readFile(file) {
   return utf8.includes("\uFFFD") ? new TextDecoder("shift-jis").decode(buffer) : utf8;
 }
 
+async function extractPdfText(file) {
+  if (!window.pdfjsLib) throw new Error("PDF読み込みライブラリを利用できません。");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const document = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const lines = [];
+  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+    const page = await document.getPage(pageNumber);
+    const content = await page.getTextContent();
+    const pageLines = [];
+    content.items.filter((item) => item.str && item.transform).forEach((item) => {
+      const x = item.transform[4];
+      const y = item.transform[5];
+      let line = pageLines.find((candidate) => Math.abs(candidate.y - y) < 3);
+      if (!line) { line = { y, items: [] }; pageLines.push(line); }
+      line.items.push({ x, width: item.width || 0, text: item.str });
+    });
+    pageLines.sort((a, b) => b.y - a.y).forEach((line) => {
+      line.items.sort((a, b) => a.x - b.x);
+      let previousEnd = null;
+      const cells = [];
+      line.items.forEach((item) => {
+        const gap = previousEnd === null ? 0 : item.x - previousEnd;
+        if (gap > 18) cells.push(item.text.trim());
+        else if (cells.length) cells[cells.length - 1] += item.text;
+        else cells.push(item.text.trim());
+        previousEnd = item.x + item.width;
+      });
+      if (cells.some((cell) => cell)) lines.push(cells.join("\t"));
+    });
+  }
+  if (!lines.length) throw new Error("PDFから文字を抽出できませんでした。画像PDFには対応していないため、文字情報を含むPDFを選択してください。");
+  return lines.join("\n");
+}
+
 $("file-input").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
-  loadText(await readFile(file), file.name);
+  try {
+    const text = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+      ? await extractPdfText(file)
+      : await readFile(file);
+    loadText(text, file.name);
+  } catch (error) {
+    $("message").textContent = error.message || "ファイルを読み込めませんでした。";
+    $("message").hidden = false;
+    $("file-status").textContent = "";
+  }
 });
 $("load-button").addEventListener("click", () => loadText($("data-input").value));
 $("sample-button").addEventListener("click", () => { $("data-input").value = SAMPLE; loadText(SAMPLE, "サンプル"); });

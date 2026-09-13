@@ -17,11 +17,11 @@
 
       <section class="panel">
         <h2>1. 献立ファイルを読み込む</h2>
-        <p class="hint">CSV・TSVファイルを選択するか、下の欄に貼り付けてください。1行目が見出しの場合は自動で認識します。</p>
+        <p class="hint">CSV・TSV・PDFファイルを選択するか、下の欄に貼り付けてください。1行目が見出しの場合は自動で認識します。</p>
         <label class="file-drop" for="file-input">
           <span class="file-icon" aria-hidden="true">↑</span>
-          <span><strong>ファイルを選択</strong><br><small>CSV / TSV、UTF-8・Shift-JIS</small></span>
-          <input id="file-input" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values">
+          <span><strong>ファイルを選択</strong><br><small>CSV / TSV / PDF、UTF-8・Shift-JIS</small></span>
+          <input id="file-input" type="file" accept=".csv,.tsv,.txt,.pdf,text/csv,text/tab-separated-values,application/pdf">
         </label>
         <div class="or"><span>または貼り付け</span></div>
         <textarea id="data-input" rows="7" placeholder="日付,献立名,原材料
@@ -62,6 +62,7 @@
         <p class="disclaimer">この結果は原材料欄の文字列による確認補助です。最終的な喫食可否は、学校・栄養教諭・医療機関の指示と、メーカー等の正式な表示を必ず確認してください。</p>
       </section>
     </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
