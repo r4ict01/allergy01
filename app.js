@@ -93,7 +93,7 @@ function displayResults() {
   const menuIndex = headers.findIndex((header) => /献立名|メニュー|料理名|献立|料理|menu/i.test(header));
   const displayDateIndex = dateIndex >= 0 ? dateIndex : 0;
   const displayMenuIndex = menuIndex >= 0 && menuIndex !== displayDateIndex ? menuIndex : (headers.length > 1 ? 1 : 0);
-  head.innerHTML = "<tr><th>日にち</th><th>料理</th></tr>";
+  head.innerHTML = "";
   let matches = 0;
   let currentDate = null;
   rows.forEach((row) => {
@@ -103,10 +103,9 @@ function displayResults() {
     const date = formatDate(row[displayDateIndex] || "");
     if (date !== currentDate) {
       currentDate = date;
-      body.insertAdjacentHTML("beforeend", `<tr class="date-group"><th colspan="2">${escapeHtml(date || "日付未記載")}</th></tr>`);
+      body.insertAdjacentHTML("beforeend", `<tr class="date-group"><th>日にち</th><td>${escapeHtml(date || "日付未記載")}</td></tr>`);
     }
-    const cells = `<td>${escapeHtml(date)}</td><td>${escapeHtml(row[displayMenuIndex] || "")}</td>`;
-    body.insertAdjacentHTML("beforeend", `<tr>${cells}</tr>`);
+    body.insertAdjacentHTML("beforeend", `<tr class="menu-row"><th>メニュー</th><td>${escapeHtml(row[displayMenuIndex] || "")}</td></tr>`);
   });
   $("result-summary").textContent = matches
     ? `${rows.length}件中 ${matches}件の料理にアレルギーの可能性があります。`

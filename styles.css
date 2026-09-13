@@ -53,8 +53,10 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { padding: 12px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
 th { color: var(--muted); background: #f7faf8; font-size: 12px; white-space: nowrap; }
-.date-group th { padding: 11px 10px 7px; color: var(--green-dark); background: #eaf4ef; font-size: 15px; }
-.date-group:not(:first-child) th { border-top: 12px solid var(--paper); }
+.date-group th, .date-group td { padding: 11px 10px 7px; color: var(--green-dark); background: #eaf4ef; font-size: 15px; }
+.date-group:not(:first-child) th, .date-group:not(:first-child) td { border-top: 12px solid var(--paper); }
+.date-group th, .menu-row th { width: 110px; white-space: nowrap; }
+.menu-row th { color: var(--muted); font-size: 13px; font-weight: 700; }
 .match { color: var(--danger); font-weight: 700; }
 .safe { color: var(--green-dark); }
 .disclaimer { margin: 20px 0 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
