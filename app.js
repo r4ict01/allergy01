@@ -117,7 +117,11 @@ function displayResults() {
 }
 
 function isDateValue(value) {
-  return /^\s*(?:\d{4}\s*[年\/.-]\s*\d{1,2}\s*[月\/.-]\s*\d{1,2}\s*日?|\d{1,2}\s*(?:月|[\/.-])\s*\d{1,2}\s*日?)(?:\s*[（(][月火水木金土日][）)])?\s*$/.test(String(value));
+  return Boolean(extractDate(String(value)));
+}
+
+function extractDate(value) {
+  return String(value).match(/(?:\d\s*){4}\s*年\s*(?:\d\s*){1,2}\s*月\s*(?:\d\s*){1,2}\s*日?|(?:\d\s*){4}\s*[\/.-]\s*(?:\d\s*){1,2}\s*[\/.-]\s*(?:\d\s*){1,2}|(?:\d\s*){1,2}\s*月\s*(?:\d\s*){1,2}\s*日?|(?:\d\s*){1,2}\s*[\/.-]\s*(?:\d\s*){1,2}\s*日?/);
 }
 
 function findDateColumn() {
@@ -137,8 +141,11 @@ function findDateColumn() {
 
 function formatDate(value) {
   const text = String(value).trim();
-  const fullMatch = text.match(/(\d{4})\s*[年\/.-]\s*(\d{1,2})\s*[月\/.-]\s*(\d{1,2})\s*日?/);
-  const shortMatch = text.match(/(\d{1,2})\s*(?:月|[\/.-])\s*(\d{1,2})\s*日?/);
+  const extracted = extractDate(text);
+  if (!extracted) return text;
+  const dateText = extracted[0].replace(/\s/g, "");
+  const fullMatch = dateText.match(/(\d{4})[年\/.-](\d{1,2})[月\/.-](\d{1,2})日?/);
+  const shortMatch = dateText.match(/(\d{1,2})(?:月|[\/.-])(\d{1,2})日?/);
   if (!fullMatch && !shortMatch) return text;
   if (!fullMatch) return `${Number(shortMatch[1])}月${Number(shortMatch[2])}日`;
   const date = new Date(Number(fullMatch[1]), Number(fullMatch[2]) - 1, Number(fullMatch[3]));
