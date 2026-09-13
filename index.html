@@ -16,8 +16,8 @@
       </header>
 
       <section class="panel">
-        <h2>1. 献立ファイルを読み込む</h2>
-        <p class="hint">CSV・TSV・PDFファイルを選択するか、下の欄に貼り付けてください。1行目が見出しの場合は自動で認識します。</p>
+        <h2>1. 材料表を読み込む</h2>
+        <p class="hint">アレルギー判定に使う材料表を読み込みます。CSV・TSV・PDF、または下の欄への貼り付けに対応しています。</p>
         <label class="file-drop" for="file-input">
           <span class="file-icon" aria-hidden="true">↑</span>
           <span><strong>ファイルを選択</strong><br><small>CSV / TSV / PDF、UTF-8・Shift-JIS</small></span>
@@ -35,7 +35,18 @@
       </section>
 
       <section class="panel">
-        <h2>2. 確認するアレルゲンを選ぶ</h2>
+        <h2>2. 盛り付け表を読み込む</h2>
+        <p class="hint">画像表示に使う盛り付け表PDFを読み込みます。チェック後、1枚目の画像に「✕」を付けて表示します。</p>
+        <label class="file-drop" for="serving-file-input">
+          <span class="file-icon" aria-hidden="true">↑</span>
+          <span><strong>盛り付け表PDFを選択</strong><br><small>PDF（文字情報を含むPDF推奨）</small></span>
+          <input id="serving-file-input" type="file" accept=".pdf,application/pdf">
+        </label>
+        <span id="serving-file-status" class="status" role="status"></span>
+      </section>
+
+      <section class="panel">
+        <h2>3. 確認するアレルゲンを選ぶ</h2>
         <p class="hint">食品表示法の特定原材料等に対応しています。原材料欄に記載された語をもとに判定します。</p>
         <div id="allergen-list" class="allergen-grid"></div>
         <div class="selection-actions">
@@ -45,7 +56,7 @@
       </section>
 
       <section class="panel check-panel">
-        <h2>3. チェックを開始する</h2>
+        <h2>4. チェックを開始する</h2>
         <p class="hint">献立とアレルゲンを確認してから、チェックを開始してください。</p>
         <button id="check-button" class="primary" type="button" disabled>アレルギーチェックを開始</button>
       </section>
@@ -53,7 +64,7 @@
       <section class="panel results-panel" aria-live="polite">
         <div class="results-heading">
           <div>
-            <h2>4. チェック結果</h2>
+            <h2>5. チェック結果</h2>
             <p id="result-summary" class="hint">献立を読み込むと結果が表示されます。</p>
           </div>
           <div class="result-actions">

@@ -272,12 +272,12 @@ async function readFile(file) {
   return utf8.includes("\uFFFD") ? new TextDecoder("shift-jis").decode(buffer) : utf8;
 }
 
-async function extractPdfText(file) {
+async function extractPdfText(file, saveImages = false) {
   if (!window.pdfjsLib) throw new Error("PDF読み込みライブラリを利用できません。");
   pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
   const pdfDocument = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
   const lines = [];
-  pdfPageImages = [];
+  const pageImages = [];
   for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
     const page = await pdfDocument.getPage(pageNumber);
     const viewport = page.getViewport({ scale: 1.5 });
@@ -311,9 +311,10 @@ async function extractPdfText(file) {
         line.canvasY = viewport.height - line.y;
       }
     });
-    pdfPageImages.push({ canvas: pageCanvas, lines: pageLines.filter((line) => line.text) });
+    pageImages.push({ canvas: pageCanvas, lines: pageLines.filter((line) => line.text) });
   }
-  if (!lines.length) throw new Error("PDFから文字を抽出できませんでした。画像PDFには対応していないため、文字情報を含むPDFを選択してください。");
+  if (!lines.length && !saveImages) throw new Error("PDFから文字を抽出できませんでした。画像PDFには対応していないため、文字情報を含むPDFを選択してください。");
+  if (saveImages) pdfPageImages = pageImages;
   return lines.join("\n");
 }
 
@@ -329,6 +330,19 @@ $("file-input").addEventListener("change", async (event) => {
     $("message").textContent = error.message || "ファイルを読み込めませんでした。";
     $("message").hidden = false;
     $("file-status").textContent = "";
+  }
+});
+$("serving-file-input").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    await extractPdfText(file, true);
+    $("serving-file-status").textContent = `${file.name}を読み込みました`;
+    $("message").hidden = true;
+  } catch (error) {
+    $("message").textContent = error.message || "盛り付け表を読み込めませんでした。";
+    $("message").hidden = false;
+    $("serving-file-status").textContent = "";
   }
 });
 $("load-button").addEventListener("click", () => loadText($("data-input").value));
