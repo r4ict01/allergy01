@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="学校給食の献立ファイルから、選択したアレルゲンを含む可能性のある献立を確認するアプリ">
+    <title>給食アレルギーチェッカー</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="container">
+      <header class="hero">
+        <p class="eyebrow">SCHOOL LUNCH SAFETY</p>
+        <h1>給食アレルギーチェッカー</h1>
+        <p>献立ファイルを読み込み、選択したアレルゲンが含まれる可能性のある献立を確認します。</p>
+      </header>
+
+      <section class="panel">
+        <h2>1. 献立ファイルを読み込む</h2>
+        <p class="hint">CSV・TSVファイルを選択するか、下の欄に貼り付けてください。1行目が見出しの場合は自動で認識します。</p>
+        <label class="file-drop" for="file-input">
+          <span class="file-icon" aria-hidden="true">↑</span>
+          <span><strong>ファイルを選択</strong><br><small>CSV / TSV、UTF-8・Shift-JIS</small></span>
+          <input id="file-input" type="file" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values">
+        </label>
+        <div class="or"><span>または貼り付け</span></div>
+        <textarea id="data-input" rows="7" placeholder="日付,献立名,原材料
+2026/09/14,カレーライス,小麦・牛肉・乳成分
+2026/09/15,鮭の塩焼き,さけ・大豆"></textarea>
+        <div class="actions">
+          <button id="load-button" class="primary" type="button">献立を読み込む</button>
+          <button id="sample-button" class="secondary" type="button">サンプルを表示</button>
+          <span id="file-status" class="status" role="status"></span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>2. 確認するアレルゲンを選ぶ</h2>
+        <p class="hint">食品表示法の特定原材料等に対応しています。原材料欄に記載された語をもとに判定します。</p>
+        <div id="allergen-list" class="allergen-grid"></div>
+        <div class="selection-actions">
+          <button id="select-all" class="link-button" type="button">すべて選択</button>
+          <button id="clear-all" class="link-button" type="button">選択を解除</button>
+        </div>
+      </section>
+
+      <section class="panel results-panel" aria-live="polite">
+        <div class="results-heading">
+          <div>
+            <h2>3. チェック結果</h2>
+            <p id="result-summary" class="hint">献立を読み込むと結果が表示されます。</p>
+          </div>
+          <button id="download-button" class="secondary" type="button" disabled>結果をCSV保存</button>
+        </div>
+        <div id="message" class="message" hidden></div>
+        <div class="table-wrap">
+          <table>
+            <thead id="result-head"></thead>
+            <tbody id="result-body"></tbody>
+          </table>
+        </div>
+        <p class="disclaimer">この結果は原材料欄の文字列による確認補助です。最終的な喫食可否は、学校・栄養教諭・医療機関の指示と、メーカー等の正式な表示を必ず確認してください。</p>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
