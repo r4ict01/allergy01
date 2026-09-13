@@ -90,6 +90,7 @@ function displayResults() {
     return;
   }
   const dateIndex = findDateColumn();
+  const monthIndex = headers.findIndex((header) => /^(月|month)$/i.test(String(header).trim()));
   const menuIndex = headers.findIndex((header) => /献立名|メニュー|料理名|献立|料理|menu/i.test(header));
   const displayDateIndex = dateIndex >= 0 ? dateIndex : 0;
   const displayMenuIndex = menuIndex >= 0 && menuIndex !== displayDateIndex ? menuIndex : (headers.length > 1 ? 1 : 0);
@@ -100,7 +101,7 @@ function displayResults() {
     const allergens = matchingAllergens(row);
     if (!allergens.length) return;
     matches += 1;
-    const date = formatDate(row[displayDateIndex] || "");
+    const date = formatRowDate(row, displayDateIndex, monthIndex);
     if (date !== currentDate) {
       currentDate = date;
       body.insertAdjacentHTML("beforeend", `<tr class="date-group"><th>日にち</th><td>${escapeHtml(date || "日付未記載")}</td></tr>`);
@@ -125,7 +126,7 @@ function extractDate(value) {
 }
 
 function findDateColumn() {
-  const headerIndex = headers.findIndex((header) => /日付|日にち|date/i.test(header));
+  const headerIndex = headers.findIndex((header) => /^(日付|日にち|日|date)$/i.test(String(header).trim()));
   if (headerIndex >= 0) return headerIndex;
   let bestIndex = -1;
   let bestScore = 0;
@@ -137,6 +138,17 @@ function findDateColumn() {
     }
   });
   return bestScore > 0 ? bestIndex : 0;
+}
+
+function formatRowDate(row, dateIndex, monthIndex) {
+  const rawDate = row[dateIndex] || "";
+  const formatted = formatDate(rawDate);
+  if (formatted !== String(rawDate).trim() || extractDate(String(rawDate))) return formatted;
+  if (monthIndex >= 0 && dateIndex !== monthIndex && /^\s*\d{1,2}\s*$/.test(String(rawDate))) {
+    const month = String(row[monthIndex] || "").match(/\d{1,2}/);
+    if (month) return `${Number(month[0])}月${Number(rawDate)}日`;
+  }
+  return formatted;
 }
 
 function formatDate(value) {
