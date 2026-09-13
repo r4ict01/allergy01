@@ -97,11 +97,13 @@ function displayResults() {
   head.innerHTML = "<tr><th>日にち</th><th>アレルギーの可能性のあるメニュー</th></tr>";
   let matches = 0;
   let currentDate = null;
+  let currentMonth = "";
   rows.forEach((row) => {
+    if (monthIndex >= 0 && String(row[monthIndex] || "").trim()) currentMonth = row[monthIndex];
     const allergens = matchingAllergens(row);
     if (!allergens.length) return;
     matches += 1;
-    const date = formatRowDate(row, displayDateIndex, monthIndex);
+    const date = formatRowDate(row, displayDateIndex, currentMonth);
     if (date !== currentDate) {
       currentDate = date;
       body.insertAdjacentHTML("beforeend", `<tr class="date-group"><th>日にち</th><td>${escapeHtml(date || "日付未記載")}</td></tr>`);
@@ -140,12 +142,12 @@ function findDateColumn() {
   return bestScore > 0 ? bestIndex : 0;
 }
 
-function formatRowDate(row, dateIndex, monthIndex) {
+function formatRowDate(row, dateIndex, monthValue) {
   const rawDate = row[dateIndex] || "";
   const formatted = formatDate(rawDate);
   if (formatted !== String(rawDate).trim() || extractDate(String(rawDate))) return formatted;
-  if (monthIndex >= 0 && dateIndex !== monthIndex && /^\s*\d{1,2}\s*$/.test(String(rawDate))) {
-    const month = String(row[monthIndex] || "").match(/\d{1,2}/);
+  if (monthValue && /^\s*\d{1,2}\s*$/.test(String(rawDate))) {
+    const month = String(monthValue).match(/\d{1,2}/);
     if (month) return `${Number(month[0])}月${Number(rawDate)}日`;
   }
   return formatted;
