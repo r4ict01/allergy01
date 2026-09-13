@@ -34,6 +34,7 @@ const SAMPLE = `日付,献立名,原材料
 
 let rows = [];
 let headers = [];
+let hasChecked = false;
 
 const $ = (id) => document.getElementById(id);
 const normalize = (value) => value.normalize("NFKC").toLowerCase();
@@ -95,6 +96,7 @@ function displayResults() {
   });
   $("result-summary").textContent = `${rows.length}件中 ${matches}件で、選択したアレルゲンの可能性が見つかりました。`;
   $("download-button").disabled = false;
+  hasChecked = true;
 }
 
 function escapeHtml(value) {
@@ -109,9 +111,14 @@ function loadText(text, label = "") {
     return;
   }
   ({ headers, rows } = parsed);
+  hasChecked = false;
   $("message").hidden = true;
   $("file-status").textContent = label ? `${label}を読み込みました` : "貼り付けたデータを読み込みました";
-  displayResults();
+  $("check-button").disabled = false;
+  $("result-summary").textContent = "チェック開始ボタンを押すと結果が表示されます。";
+  $("result-head").innerHTML = "";
+  $("result-body").innerHTML = "";
+  $("download-button").disabled = true;
 }
 
 function downloadResults() {
@@ -181,7 +188,8 @@ $("file-input").addEventListener("change", async (event) => {
 });
 $("load-button").addEventListener("click", () => loadText($("data-input").value));
 $("sample-button").addEventListener("click", () => { $("data-input").value = SAMPLE; loadText(SAMPLE, "サンプル"); });
+$("check-button").addEventListener("click", displayResults);
 $("select-all").addEventListener("click", () => document.querySelectorAll("#allergen-list input").forEach((input) => { input.checked = true; }));
 $("clear-all").addEventListener("click", () => document.querySelectorAll("#allergen-list input").forEach((input) => { input.checked = false; }));
-$("allergen-list").addEventListener("change", displayResults);
+$("allergen-list").addEventListener("change", () => { if (hasChecked) displayResults(); });
 $("download-button").addEventListener("click", downloadResults);
