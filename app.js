@@ -93,7 +93,7 @@ function displayResults() {
   const menuIndex = headers.findIndex((header) => /献立名|メニュー|料理名|献立|料理|menu/i.test(header));
   const displayDateIndex = dateIndex >= 0 ? dateIndex : 0;
   const displayMenuIndex = menuIndex >= 0 && menuIndex !== displayDateIndex ? menuIndex : (headers.length > 1 ? 1 : 0);
-  head.innerHTML = "";
+  head.innerHTML = "<tr><th>日にち</th><th>アレルギーの可能性のあるメニュー</th></tr>";
   let matches = 0;
   let currentDate = null;
   rows.forEach((row) => {
@@ -105,7 +105,7 @@ function displayResults() {
       currentDate = date;
       body.insertAdjacentHTML("beforeend", `<tr class="date-group"><th>日にち</th><td>${escapeHtml(date || "日付未記載")}</td></tr>`);
     }
-    body.insertAdjacentHTML("beforeend", `<tr class="menu-row"><th>メニュー</th><td>${escapeHtml(row[displayMenuIndex] || "")}</td></tr>`);
+    body.insertAdjacentHTML("beforeend", `<tr class="menu-row"><th>アレルギーの可能性のあるメニュー</th><td>${escapeHtml(row[displayMenuIndex] || "")}</td></tr>`);
   });
   $("result-summary").textContent = matches
     ? `${rows.length}件中 ${matches}件の料理にアレルギーの可能性があります。`
@@ -117,7 +117,7 @@ function displayResults() {
 }
 
 function isDateValue(value) {
-  return /^\s*(?:\d{4}\s*[年\/.-]\s*\d{1,2}\s*[月\/.-]\s*\d{1,2}\s*日?|\d{1,2}\s*[月\/.-]\s*\d{1,2}\s*日?)(?:\s*[（(][月火水木金土日][）)])?\s*$/.test(String(value));
+  return /^\s*(?:\d{4}\s*[年\/.-]\s*\d{1,2}\s*[月\/.-]\s*\d{1,2}\s*日?|\d{1,2}\s*(?:月|[\/.-])\s*\d{1,2}\s*日?)(?:\s*[（(][月火水木金土日][）)])?\s*$/.test(String(value));
 }
 
 function findDateColumn() {
@@ -132,16 +132,19 @@ function findDateColumn() {
       bestIndex = index;
     }
   });
-  return bestIndex >= 0 ? bestIndex : 0;
+  return bestScore > 0 ? bestIndex : 0;
 }
 
 function formatDate(value) {
-  const match = String(value).match(/(\d{4})\s*[年\/.-]\s*(\d{1,2})\s*[月\/.-]\s*(\d{1,2})\s*日?/);
-  if (!match) return String(value).trim();
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const text = String(value).trim();
+  const fullMatch = text.match(/(\d{4})\s*[年\/.-]\s*(\d{1,2})\s*[月\/.-]\s*(\d{1,2})\s*日?/);
+  const shortMatch = text.match(/(\d{1,2})\s*(?:月|[\/.-])\s*(\d{1,2})\s*日?/);
+  if (!fullMatch && !shortMatch) return text;
+  if (!fullMatch) return `${Number(shortMatch[1])}月${Number(shortMatch[2])}日`;
+  const date = new Date(Number(fullMatch[1]), Number(fullMatch[2]) - 1, Number(fullMatch[3]));
   if (Number.isNaN(date.getTime())) return String(value).trim();
   const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-  return `${match[1]}年${Number(match[2])}月${Number(match[3])}日（${weekdays[date.getDay()]}）`;
+  return `${fullMatch[1]}年${Number(fullMatch[2])}月${Number(fullMatch[3])}日（${weekdays[date.getDay()]}）`;
 }
 
 function escapeHtml(value) {
